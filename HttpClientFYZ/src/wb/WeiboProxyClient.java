@@ -31,6 +31,9 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 
 import util.FileUtil;
+import util.HtmlUtil;
+import util.HttpUtil;
+import util.StringUtil;
 
 /**
  * Test commit from different place
@@ -48,11 +51,11 @@ public class WeiboProxyClient extends Thread {
 	private HttpPost post = null;
 	private HttpGet get = null;
 	private ArrayList <String> file = null;
-	private String name = null;
+
 	
 	String userName = null;
 	String password = null;
-	String comment = null;
+
 
 	
 	
@@ -65,7 +68,7 @@ public class WeiboProxyClient extends Thread {
 //		client = defaultHttpClient;
 		
 		this.file = file;
-		this.name = name;
+
 	}
 	
 	public static void main(String[] args) 
@@ -101,7 +104,6 @@ public class WeiboProxyClient extends Thread {
 		
 		 userName = file.get(0);
 		 password = file.get(1);
-		 comment = file.get(2);
 
 		
 		getPage();
@@ -115,15 +117,18 @@ public class WeiboProxyClient extends Thread {
 		try {
 
 			
-			String url1="http://login.weibo.cn/login/?ns=1&revalid=2&backURL=http%3A%2F%2Fweibo.cn%2F&backTitle=%CE%A2%B2%A9&vt=";
+			String url1="https://login.weibo.cn/login/?ns=1&revalid=2&backURL=http%3A%2F%2Fweibo.cn%2F&backTitle=%CE%A2%B2%A9&vt=";
+						
 			post = new HttpPost(url1);
 
 			
 			HttpResponse response = client.execute(post);
-			StringBuffer result = printResponse(response);
+			StringBuffer result = HttpUtil.readResponse(response, "UTF-8");
+			System.out.println(result);
+			HtmlUtil.parseHtml(result.toString());
 			
-			String vk= findPattern("name=\"vk\" value=\"(.*)\" /><input type=\"submit\"", result.toString());
-			String passwordfieldname= findPattern("<input type=\"password\" name=\"(.*)\" size=\"30\" /><br/><input type=\"checkbox\"",result.toString());
+			String vk= StringUtil.findPattern("name=\"vk\" value=\"(.*)\" /><input type=\"submit\"", result.toString());
+			String passwordfieldname= StringUtil.findPattern("<input type=\"password\" name=\"(.*)\" size=\"30\" /><br/><input type=\"checkbox\"",result.toString());
 			
 			
 			System.out.println("aa" + vk + "pd" + passwordfieldname);
@@ -170,15 +175,15 @@ public class WeiboProxyClient extends Thread {
 			response = client.execute(post);
 			String neurl = response.getFirstHeader("Location").getValue();
 			System.out.println("new url:" + neurl);
-			StringBuffer sb = printResponse(response);
+			StringBuffer sb = HttpUtil.readResponse(response,"UTF-8");
 			
 			HttpGet request2 = new HttpGet(neurl);
 			  HttpResponse response2 = client.execute(request2);
-			  printResponse(response2);
+			  HttpUtil.readResponse(response2,"UTF-8");
 			
 			  HttpGet request3 = new HttpGet("http://weibo.cn/comment/Bj9xmb8Ea?uid=5031070097&rl=0&gid=10001#cmtfrm");
 			  HttpResponse response3 = client.execute(request3);
-			  StringBuffer onePost  = printResponse(response3);
+			  StringBuffer onePost  = HttpUtil.readResponse(response3,"UTF-8");
 			  
 			  
 				//List<NameValuePair> newnameValuePairs = new ArrayList<NameValuePair>(1);
@@ -203,7 +208,7 @@ public class WeiboProxyClient extends Thread {
 			
 			  //HttpGet request4 = new HttpGet(replyURL);
 			  HttpResponse response4 = client.execute(post); 
-			  printResponse(response4);
+			  HttpUtil.readResponse(response4,"UTF-8");
 			
 			  try{
 				neurl = response4.getFirstHeader("Location").getValue();
@@ -224,9 +229,9 @@ public class WeiboProxyClient extends Thread {
 				
 				  HttpGet request5 = new HttpGet(neurl);
 				  HttpResponse response5 = client.execute(request5);
-				  result = printResponse(response5);
+				  result = HttpUtil.readResponse(response5,"UTF-8");
 				  
-				  String reply= findPattern("@文明礼貌上网</a>:(.*?)</span>.*举报</a>.*"+question, result.toString());
+				  String reply= StringUtil.findPattern("@文明礼貌上网</a>:(.*?)</span>.*举报</a>.*"+question, result.toString());
 				if (reply != null && reply.length() > 0)
 				{
 					System.out.println("电脑:" + reply);
@@ -260,14 +265,14 @@ public class WeiboProxyClient extends Thread {
 	private String prepareComments(String form, List<NameValuePair> nameValuePairs, String commentText) {
 
 		//String url = findPattern("<form action=\"(.*?)\" method=\"post\"><div>评论",	form);
-		String url = findPattern("<form action=\"(.*?)\" method=\"post\"><div>    评论",	form);
+		String url = StringUtil.findPattern("<form action=\"(.*?)\" method=\"post\"><div>    评论",	form);
 
 		//System.out.println("######" + url);
-		String srcuid = findPattern("<input type=\"hidden\" name=\"srcuid\" value=\"(.*?)\" />", form);
+		String srcuid = StringUtil.findPattern("<input type=\"hidden\" name=\"srcuid\" value=\"(.*?)\" />", form);
 		//System.out.println("######" + srcuid);
-		String id = findPattern("<input type=\"hidden\" name=\"id\" value=\"(.*?)\" />", form);
+		String id = StringUtil.findPattern("<input type=\"hidden\" name=\"id\" value=\"(.*?)\" />", form);
 		//System.out.println("######" + id);
-		String rl = findPattern("<input type=\"hidden\" name=\"rl\" value=\"(.*?)\" />", form);
+		String rl = StringUtil.findPattern("<input type=\"hidden\" name=\"rl\" value=\"(.*?)\" />", form);
 		//System.out.println("######" + rl);
 
 		// System.out.println(name + ": " + commentText);
@@ -289,74 +294,11 @@ public class WeiboProxyClient extends Thread {
 	
 	
 	
-	protected StringBuffer printResponse(HttpResponse response)
-			throws UnsupportedEncodingException, IOException {
-		BufferedReader rd = new BufferedReader(new InputStreamReader(
-				response.getEntity().getContent(), "UTF8"));
 
-		StringBuffer sb = new StringBuffer();
-		String line = "";
-		while ((line = rd.readLine()) != null) {
-			sb.append(line + "\n");
-		}
-		
-		//System.out.println("---------------1-----" + sb);
-		
-		return sb;
-	}
 	
-//	/**
-//	 * HTTP Get method
-//	 */
-//	public String getPage(String url) {
-//		//System.out.println(name + ":  GET: " + url );
-//		get = new HttpGet(url);
-//		
-//
-//		try {
-//
-//			//get.setHeader("ContentType","application//x-www-form-urlencoded;charset=UTF-8");
-//			get.removeHeaders("UserAgent");
-//			get.setHeader("Accept","text/html, application/xhtml+xml, */*");
-//			get.setHeader("Accept-Language:","en-AU");
-//			  
-//			get.setHeader("UserAgent","Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko");
-// 
-//			
-//			HttpResponse response = client.execute(get);
-//			StringBuffer sb = printResponse(response);
-//
-//			return sb.toString();
-//
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//
-//		}
-//		return null;
-//	}
+
 	
-	/**
-	 * Parsing
-	 */
-	private String findPattern(String pattern, String oneComment) {
-		Pattern p;
-		p = Pattern.compile(pattern, Pattern.DOTALL | Pattern.MULTILINE);
-		Matcher m = p.matcher(oneComment);
-		boolean found = false;
-		
-		while (m.find()) {
-			oneComment = m.group(1);
-			found = true;
-		}
-		
-		if (found) 
-		{
-			return oneComment;
-		} else 
-		{
-			return null;
-		}
-	}
+
 	
 	
 
