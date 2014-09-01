@@ -29,7 +29,7 @@ public static   Map<String, String> parseHtml(String html) {
         // ignore buttons
         String type = attributes.get("type");
         if (type != null
-                && (type.equalsIgnoreCase("submit") || type
+                && (type.equalsIgnoreCase("submit1") || type
                         .equalsIgnoreCase("button"))) {
             continue;
         }

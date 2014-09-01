@@ -11,7 +11,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -116,78 +118,49 @@ public class WeiboProxyClient extends Thread {
 	{
 		try {
 
-			
-			String url1="https://login.weibo.cn/login/?ns=1&revalid=2&backURL=http%3A%2F%2Fweibo.cn%2F&backTitle=%CE%A2%B2%A9&vt=";
-						
-			post = new HttpPost(url1);
-
-			
+			// First page
+			String url="https://login.weibo.cn/login/?ns=1&revalid=2&backURL=http%3A%2F%2Fweibo.cn%2F&backTitle=%CE%A2%B2%A9&vt=";
+			post = new HttpPost(url);
 			HttpResponse response = client.execute(post);
-			StringBuffer result = HttpUtil.readResponse(response, "UTF-8");
+			StringBuffer result = HttpUtil.readResponse(response, "UTF-8");		
 			System.out.println(result);
-			HtmlUtil.parseHtml(result.toString());
 			
-			String vk= StringUtil.findPattern("name=\"vk\" value=\"(.*)\" /><input type=\"submit\"", result.toString());
+			// Log in via first page
+			Map<String, String> pairs = HtmlUtil.parseHtml(result.toString());
+			List<NameValuePair> nameValuePairs = HtmlUtil.convertMap(pairs);
+			
+			Map<String, String> inputValue = new HashMap<String, String>();
+
 			String passwordfieldname= StringUtil.findPattern("<input type=\"password\" name=\"(.*)\" size=\"30\" /><br/><input type=\"checkbox\"",result.toString());
-			
-			
-			System.out.println("aa" + vk + "pd" + passwordfieldname);
-			
-			
-			//post.setURI(new URI(url));
-			
-
-			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
-			nameValuePairs.add(new BasicNameValuePair("mobile",
-					userName));
-			nameValuePairs.add(new BasicNameValuePair(passwordfieldname,
-					password));
-			nameValuePairs.add(new BasicNameValuePair("remember",
-					"on"));
-
-//			nameValuePairs.add(new BasicNameValuePair("backURL",
-//					"http%253A%252F%252Fweibo.cn%252F"));
-			
-			nameValuePairs.add(new BasicNameValuePair("backURL",
-					"http%3A%2F%2Fweibo.cn%2F"));
-//			nameValuePairs.add(new BasicNameValuePair("backTitle",
-//					"%E5%BE%AE%E5%8D%9A"));
-			nameValuePairs.add(new BasicNameValuePair("backTitle",
-					"微博"));
-			
-			nameValuePairs.add(new BasicNameValuePair("tryCount",
-					""));
-
-			nameValuePairs.add(new BasicNameValuePair("vk",
-					vk));
-
-//			nameValuePairs.add(new BasicNameValuePair("submit",
-//					"%E7%99%BB%E5%BD%95"));
-			nameValuePairs.add(new BasicNameValuePair("submit",
-					"登录"));
-			
-
-
-
-			
-			
+			inputValue.put("mobile", userName);
+			inputValue.put(passwordfieldname, password);
+			HtmlUtil.setValues(nameValuePairs, inputValue);
 			post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 			response = client.execute(post);
+			System.out.println(response);
+			
+			// Redirected to a new GET page
 			String neurl = response.getFirstHeader("Location").getValue();
 			System.out.println("new url:" + neurl);
-			StringBuffer sb = HttpUtil.readResponse(response,"UTF-8");
-			
+			StringBuffer sb = HttpUtil.readResponse(response, "UTF-8");
+
 			HttpGet request2 = new HttpGet(neurl);
-			  HttpResponse response2 = client.execute(request2);
-			  HttpUtil.readResponse(response2,"UTF-8");
+			HttpResponse response2 = client.execute(request2);
+			String result1 = HttpUtil.readResponse(response2, "UTF-8").toString();
+			System.out.println(result1);
+			String urlYuanWenPingLun = StringUtil.findPattern("<a href=\"(.*?)\" class=\"cc\">原文评论",result1);
+			System.out.println("RR" + urlYuanWenPingLun);
 			
-			  HttpGet request3 = new HttpGet("http://weibo.cn/comment/Bj9xmb8Ea?uid=5031070097&rl=0&gid=10001#cmtfrm");
-			  HttpResponse response3 = client.execute(request3);
-			  StringBuffer onePost  = HttpUtil.readResponse(response3,"UTF-8");
+			HttpGet request3 = new HttpGet(
+					"http://weibo.cn/comment/Bj9xmb8Ea?uid=5031070097&rl=0&gid=10001#cmtfrm");
+			request3 = new HttpGet(urlYuanWenPingLun);
+			HttpResponse response3 = client.execute(request3);
+			StringBuffer onePost = HttpUtil.readResponse(response3, "UTF-8");
 			  
 			  
-				//List<NameValuePair> newnameValuePairs = new ArrayList<NameValuePair>(1);
-				String replyURL = null;
+			// List<NameValuePair> newnameValuePairs = new
+			// ArrayList<NameValuePair>(1);
+			String replyURL = null;
 
 			
 			// System.out.println(comment);
