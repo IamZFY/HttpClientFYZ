@@ -40,7 +40,7 @@ public static   Map<String, String> parseHtmlMap(String html) {
                 value = "";
             }
             parameters.put(name, value);
-            System.out.println("Key  : "+name+"  , value : "+value);
+            // System.out.println("Key  : "+name+"  , value : "+value);
         }
     }
     return parameters;
@@ -76,7 +76,7 @@ public static List<NameValuePair> convertMap(Map<String,String> map)
 	Iterator<Map.Entry<String, String>> it = map.entrySet().iterator();
     while (it.hasNext()) {
         Map.Entry<String, String> pairs = it.next();
-        System.out.println(pairs.getKey() + " = " + pairs.getValue());
+        // System.out.println(pairs.getKey() + " = " + pairs.getValue());
     	nameValuePairs.add(new BasicNameValuePair(pairs.getKey(),
     			pairs.getValue()));
         it.remove(); // avoids a ConcurrentModificationException
@@ -99,8 +99,33 @@ public static List<NameValuePair> convertMap(Map<String,String> map)
 
 	}
 	
+	/**
+	 * Update existing name value pairs
+	 */
+	public static void setValues(List<NameValuePair> pairs, String name, String value) {
+
+		boolean found = false;
+		for (int i = 0; i < pairs.size(); i++) {
+			String existingName = pairs.get(i).getName();
+			if (existingName.equals(name)) {
+				pairs.remove(i);
+				if (value != null )
+				{
+					pairs.add(new BasicNameValuePair(name, value));
+				}
+				found = true;
+			}
+
+		}
+		if (!found) {
+			pairs.add(new BasicNameValuePair(name, value));
+		}
+
+	}
 	
-	public static void printMap(List<NameValuePair> pairs	) {
+	
+	
+	public static void printMap(List<NameValuePair> pairs) {
 
 		for (int i = 0; i < pairs.size(); i++) {
 			String name = pairs.get(i).getName();
