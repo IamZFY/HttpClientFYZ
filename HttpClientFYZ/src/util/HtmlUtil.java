@@ -18,7 +18,7 @@ private static String testHtml = "<html>  <body>    <h2>      Enter Following De
 public static void main(String[] args) {
     parseHtml(testHtml);
 }
-public static   Map<String, String> parseHtml(String html) {
+public static   Map<String, String> parseHtmlMap(String html) {
     Matcher matcher;
     Map<String, String> parameters;
     // pull out all parameters in the form
@@ -45,6 +45,11 @@ public static   Map<String, String> parseHtml(String html) {
     }
     return parameters;
 }
+
+public static   List<NameValuePair> parseHtml(String html) {
+	return convertMap (parseHtmlMap(html));
+}
+
 
 private static Map<String, String> parseAttributes(String attributesStr) {
     Map<String, String> attributes = new HashMap<String, String>();
@@ -89,6 +94,18 @@ public static List<NameValuePair> convertMap(Map<String,String> map)
 				pairs.remove(i);
 				pairs.add(new BasicNameValuePair(name, map.get(name)));
 			}
+
+		}
+
+	}
+	
+	
+	public static void printMap(List<NameValuePair> pairs	) {
+
+		for (int i = 0; i < pairs.size(); i++) {
+			String name = pairs.get(i).getName();
+			String value = pairs.get(i).getValue();
+			System.out.println(name + "/" + value);
 
 		}
 
