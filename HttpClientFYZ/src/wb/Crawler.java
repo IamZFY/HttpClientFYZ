@@ -23,7 +23,7 @@ import org.apache.http.impl.client.AbstractHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
-public class WeiboCrawler extends Thread {
+public class Crawler extends Thread {
 
 	static ArrayList <ArrayList <String>> files = new ArrayList <ArrayList <String>> () ;
 	private SimpleDateFormat sdf = new SimpleDateFormat("HH");
@@ -32,7 +32,7 @@ public class WeiboCrawler extends Thread {
 	private ArrayList <String> file = null;
 	private String name = null;
 	
-	WeiboCrawler(ArrayList <String> file, String name)
+	Crawler(ArrayList <String> file, String name)
 	{
 		this.file = file;
 		this.name = name;
@@ -55,7 +55,7 @@ public class WeiboCrawler extends Thread {
 		
 		for (int i = 0; i < files.size(); i++) 
 		{
-			Thread thread = new WeiboCrawler(files.get(i), "" + i);
+			Thread thread = new Crawler(files.get(i), "" + i);
 			thread.start();
 		}
 		

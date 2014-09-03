@@ -21,8 +21,13 @@ import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
-public class WeiboProxyClient2 extends Thread {
+import util.HtmlUtil;
+import util.HttpUtil;
+import util.StringUtil;
 
+public class Poster extends Thread {
+
+	private static final int HeaderLength = 8;
 	//http://weibo.cn/?gsid=4uHw63051JizpEpp5wIZhl6Oi1z
 	static ArrayList <ArrayList <String>> files = new ArrayList <ArrayList <String>> () ;
 	private SimpleDateFormat sdf = new SimpleDateFormat("HH");
@@ -31,7 +36,7 @@ public class WeiboProxyClient2 extends Thread {
 	private HttpGet get = null;
 	private ArrayList <String> file = null;
 	private String name = null;
-	WeiboProxyClient2(ArrayList <String> file, String name)
+	Poster(ArrayList <String> file, String name)
 	{
 		this.file = file;
 		this.name = name;
@@ -54,16 +59,17 @@ public class WeiboProxyClient2 extends Thread {
 		
 		for (int i = 0; i < files.size(); i++) 
 		{
-			Thread thread = new WeiboProxyClient2(files.get(i), "" + i);
+			Thread thread = new Poster(files.get(i), "" + i);
 			thread.start();
 		}
 		
 
 	}
 
-	public void run() {
+	public void run()  {
 		
 	
+		try {
 		
 		String url = file.get(0);
 		int interval = Integer.parseInt(file.get(1) );
@@ -86,13 +92,51 @@ public class WeiboProxyClient2 extends Thread {
 		}
 		int mode = Integer.parseInt(file.get(5) );
 		
+		//////////////////////////////////
+		String userName = file.get(6);
+		String password = file.get(7);
+		
+		HttpPost post = null;
+		HttpGet get = null;
+		// 1 First page
+		String loginurl = "https://login.weibo.cn/login/?ns=1&revalid=2&backURL=http%3A%2F%2Fweibo.cn%2F&backTitle=%CE%A2%B2%A9&vt=";
+		post = new HttpPost(loginurl);
+		HttpResponse response = client.execute(post);
+		StringBuffer result = HttpUtil.readResponse(response, "UTF-8");
+		// System.out.println(result);
+
+		// 2 Log in via first page
+		List<NameValuePair> nameValuePairs = HtmlUtil.parseHtml(result.toString());
+
+		HtmlUtil.setValues(nameValuePairs, "mobile", userName);
+		String passwordfieldname = StringUtil.findPattern(	"<input type=\"password\" name=\"(.*)\" size=\"30\" /><br/><input type=\"checkbox\"", result.toString());
+		HtmlUtil.setValues(nameValuePairs, passwordfieldname, password);
+		
+		System.out.println("-----------------------");
+		HtmlUtil.printMap(nameValuePairs);
+
+		post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+		response = client.execute(post);
+		// System.out.println(response);
+
+		// 3 Redirected to a new GET page
+		loginurl = response.getFirstHeader("Location").getValue();
+		StringBuffer sb = HttpUtil.readResponse(response, "UTF-8");
+
+		get = new HttpGet(loginurl);
+		response = client.execute(get);
+		HttpUtil.readResponse(response, "UTF-8").toString();
+		//////////////////
+		
+		
+		
 		
 		// Get the guy's all posts
 		String specificPost = getPage(url);
 		
 		String totalPage = findPattern("value=\"跳页\" />&nbsp;1/([0-9]*?)页", specificPost);
 		int totalPages = Integer.parseInt(totalPage );
-		//System.out.println(name + ": Total page" + totalPage);
+		System.out.println(name + ": Total page" + totalPage);
 		
 		
 		
@@ -112,22 +156,22 @@ public class WeiboProxyClient2 extends Thread {
 			//page = 14;
 			
 			String newUrl = url.replaceAll("\\?vt=", "\\?page=" + page + "vt");
-			//System.out.println("A Page in a User: " + newUrl);
+			System.out.println("A Page in a User: " + newUrl);
 			specificPost = getPage(newUrl);
-			String gsid = newUrl.substring(newUrl.indexOf("gsid=")); 
-			if (mode == 1)
+			//String gsid = newUrl.substring(newUrl.indexOf("gsid=")); 
+			if (mode == 1 || mode == 3)
 			{
 				urlsInOnePage = findAllPosts(specificPost, "<a href=\"(http://weibo.cn/comment/.*)\" class=\"cc\">评论");
 			}
 			else
 			{
-				urlsInOnePage = findAllReposts(specificPost, "<a href=\"(http://weibo.cn/repost/.*)\">转发", gsid);
+				urlsInOnePage = findAllReposts(specificPost, "<a href=\"(http://weibo.cn/repost/.*)\">转发", "");
 			}
 			// System.out.println(name + ": Total posts: " + urlsInOnePage.size() );
 			
 			
-			int size = file.size() - 6;
-			int myindex = (int) Math.floor((Math.random() * size)) + 6;
+			int size = file.size() - HeaderLength;
+			int myindex = (int) Math.floor((Math.random() * size)) + 8;
 			
 			// Pick up a random post
 			int yourindex = (int) Math.floor((Math.random() * (urlsInOnePage.size() ))) ;
@@ -139,12 +183,13 @@ public class WeiboProxyClient2 extends Thread {
 			
 			// Get the post url
 			String urlInOnePage = urlsInOnePage.get(yourindex).replace("amp;", "");
-			//System.out.println("A URL in a Page: " + urlInOnePage);
+			System.out.println("A URL in a Page: " + urlInOnePage);
 			
 			specificPost = getPage(urlInOnePage);
+			// Avoid posting to other user
 			if (mode == 2 && specificPost.contains("转发了"))
 			{
-				//System.out.println("Thread:" + name + ": skip:" + "page [" + page + "]" + ", post [" + yourindex + "]");
+				System.out.println("Thread:" + name + ": skip:" + "page [" + page + "]" + ", post [" + yourindex + "]");
 				continue;
 			}
 			
@@ -157,11 +202,12 @@ public class WeiboProxyClient2 extends Thread {
 			
 			// Parsing all value pairs
 			// System.out.println("Prepare the comment...");
-			List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(1);
+			//List<NameValuePair> 
+			nameValuePairs = new ArrayList<NameValuePair>(1);
 			String replyURL = null;
-			if (mode == 1)
+			if (mode == 1 || mode == 3)
 			{
-				replyURL = prepareComments(specificPost, nameValuePairs, file.get(myindex));
+				replyURL = prepareComments(specificPost, nameValuePairs, file.get(myindex), mode);
 			}
 			else
 			{
@@ -172,14 +218,19 @@ public class WeiboProxyClient2 extends Thread {
 			// Post the comment
 			if (replyURL != null)
 			{
-				//System.out.println(timeStamp +": Thread:" + name + ": Send comment[" + myindex + "]" + file.get(myindex) + " to page [" + page + "]" + ", post [" + yourindex + "]");
+				System.out.println(timeStamp +": Thread:" + name + ": Send comment[" + myindex + "]" + file.get(myindex) + " to page [" + page + "]" + ", post [" + yourindex + "]");
 				specificPost = postPage(replyURL, nameValuePairs);
 			}
 			else
 			{
-				//System.out.println(timeStamp +": Thread:" + name + ": Skip comment[" + myindex + "]" + file.get(myindex) + " to page [" + page + "]" + ", post [" + yourindex + "], original post deleted");
+				System.out.println(timeStamp +": Thread:" + name + ": Skip comment[" + myindex + "]" + file.get(myindex) + " to page [" + page + "]" + ", post [" + yourindex + "], original post deleted");
 			}
 			
+		}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
 		}
 		
 		System.out.println("Done");
@@ -383,9 +434,9 @@ public class WeiboProxyClient2 extends Thread {
 	/**
 	 * Parsing
 	 */
-	private String prepareComments(String form, List<NameValuePair> nameValuePairs, String commentText) {
+	private String prepareComments(String form, List<NameValuePair> nameValuePairs, String commentText, int mode) {
 
-		String url = findPattern("<form action=\"(.*?)\" method=\"post\"><div>评论",	form);
+		String url = findPattern("<form action=\"(.*?)\" method=\"post\"><div>    评论只显示",	form);
 		//.out.println("######" + url);
 		String srcuid = findPattern("<input type=\"hidden\" name=\"srcuid\" value=\"(.*?)\" />", form);
 		//System.out.println("######" + srcuid);
@@ -394,7 +445,7 @@ public class WeiboProxyClient2 extends Thread {
 		String rl = findPattern("<input type=\"hidden\" name=\"rl\" value=\"(.*?)\" />", form);
 		//System.out.println("######" + rl);
 
-		// System.out.println(name + ": " + commentText);
+		System.out.println(name + ": " + commentText);
 		if (url == null)
 		{
 			return null;
@@ -406,8 +457,19 @@ public class WeiboProxyClient2 extends Thread {
 		nameValuePairs.add(new BasicNameValuePair("id", id));
 		nameValuePairs.add(new BasicNameValuePair("rl", rl));
 		nameValuePairs.add(new BasicNameValuePair("content", commentText));
-		nameValuePairs.add(new BasicNameValuePair("rt", "评论并转发"));
 
+		if (mode == 1)
+		{
+			nameValuePairs.add(new BasicNameValuePair("rt", "评论并转发"));
+		}
+		else if (mode == 3)
+		{
+			HtmlUtil.setValues(nameValuePairs, "submit", "评论");
+		}
+		
+		
+		System.out.println("the post sending" + ": " + url);
+		
 		return url;
 	}
 	
@@ -437,7 +499,8 @@ public class WeiboProxyClient2 extends Thread {
 		nameValuePairs.add(new BasicNameValuePair("id", id));
 		nameValuePairs.add(new BasicNameValuePair("rl", rl));
 		nameValuePairs.add(new BasicNameValuePair("content", commentText));
-		//nameValuePairs.add(new BasicNameValuePair("rt", "评论并转发"));
+		
+		nameValuePairs.add(new BasicNameValuePair("rt", "评论并转发"));
 
 		return url;
 	}

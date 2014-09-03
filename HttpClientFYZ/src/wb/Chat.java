@@ -43,7 +43,7 @@ import util.StringUtil;
  * @author CarlZ
  * 
  */
-public class WeiboProxyClient extends Thread {
+public class Chat extends Thread {
 
 	static ArrayList<ArrayList<String>> files = new ArrayList<ArrayList<String>>();
 	private DefaultHttpClient client = new DefaultHttpClient();
@@ -52,7 +52,7 @@ public class WeiboProxyClient extends Thread {
 	String userName = null;
 	String password = null;
 
-	WeiboProxyClient(ArrayList<String> file, String name) {
+	Chat(ArrayList<String> file, String name) {
 		this.file = file;
 	}
 
@@ -64,7 +64,7 @@ public class WeiboProxyClient extends Thread {
 
 		for (int i = 0; i < listOfFiles.length; i++) {
 			if (listOfFiles[i].isFile()
-					&& listOfFiles[i].getName().endsWith(".txt")) {
+					&& listOfFiles[i].getName().endsWith(".dat")) {
 				System.out.println("File " + listOfFiles[i].getName());
 				oneFile = FileUtil.readFile(listOfFiles[i]);
 				files.add(oneFile);
@@ -72,7 +72,7 @@ public class WeiboProxyClient extends Thread {
 		}
 
 		for (int i = 0; i < files.size(); i++) {
-			Thread thread = new WeiboProxyClient(files.get(i), "" + i);
+			Thread thread = new Chat(files.get(i), "" + i);
 			thread.start();
 		}
 

@@ -24,7 +24,7 @@ import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 
-public class WeiboProxyLogin extends Thread {
+public class Login extends Thread {
 
 	//http://weibo.cn/?gsid=4uHw63051JizpEpp5wIZhl6Oi1z
 	static ArrayList <ArrayList <String>> files = new ArrayList <ArrayList <String>> () ;
@@ -46,7 +46,7 @@ public class WeiboProxyLogin extends Thread {
 		  }
 	
 	  
-	WeiboProxyLogin(ArrayList <String> file, String name)
+	Login(ArrayList <String> file, String name)
 	{
 		this.file = file;
 		this.name = name;
@@ -69,7 +69,7 @@ public class WeiboProxyLogin extends Thread {
 		
 		for (int i = 0; i < files.size(); i++) 
 		{
-			Thread thread = new WeiboProxyLogin(files.get(i), "" + i);
+			Thread thread = new Login(files.get(i), "" + i);
 			thread.start();
 		}
 		
