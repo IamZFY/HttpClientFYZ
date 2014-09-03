@@ -28,7 +28,6 @@ import util.StringUtil;
 public class Poster extends Thread {
 
 	private static final int HeaderLength = 8;
-	//http://weibo.cn/?gsid=4uHw63051JizpEpp5wIZhl6Oi1z
 	static ArrayList <ArrayList <String>> files = new ArrayList <ArrayList <String>> () ;
 	private SimpleDateFormat sdf = new SimpleDateFormat("HH");
 	private DefaultHttpClient client = new DefaultHttpClient();
