@@ -1,3 +1,6 @@
 eclipse.preferences.version=1
+encoding//src/wb/WeiboCrawler.java=UTF-8
 encoding//src/wb/WeiboProxyClient.java=UTF-8
+encoding//src/wb/WeiboProxyClient2.java=UTF-8
+encoding//src/wb/WeiboProxyLogin.java=UTF-8
 encoding/login.txt=UTF-8
