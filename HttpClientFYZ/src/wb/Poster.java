@@ -128,10 +128,46 @@ public class Poster extends Thread {
 		HttpUtil.readResponse(response, "UTF-8").toString();
 		//////////////////
 		
+		if (mode == 4) // deletion
+			{
+				String urlOfFirstComment = "";
+				while (urlOfFirstComment != null) {
+					String allcomments = getPage(url);
+
+					System.out.println("BBB" + allcomments);
+					urlOfFirstComment = findPattern(
+							"<a href=\"(/comments/del/.*?)\">删除", allcomments);
+					if (urlOfFirstComment == null) {
+						break;
+					}
+					System.out.println("AAA" + urlOfFirstComment);
+					urlOfFirstComment = urlOfFirstComment.replace("amp;", "");
+					System.out.println("Deletion confirmation:"
+							+ "http://weibo.cn" + urlOfFirstComment);
+
+					get = new HttpGet("http://weibo.cn" + urlOfFirstComment);
+					response = client.execute(get);
+					String delConfirmation = HttpUtil.readResponse(response,
+							"UTF-8").toString();
+					System.out.println("Content" + delConfirmation);
+					String urlOfDel = findPattern(
+							"<a href=\"(/comments/del/.*?)\">确定",
+							delConfirmation);
+					urlOfDel = urlOfDel.replace("amp;", "");
+					System.out.println("Deletion action:" + "http://weibo.cn"
+							+ urlOfDel);
+					get = new HttpGet("http://weibo.cn" + urlOfDel);
+					response = client.execute(get);
+					System.out.println("Del???" + response);
+					HttpUtil.readResponse(response, "UTF-8");
+					sleep(interval);
+
+				}
+				return;
+			}
 		
 		
-		
-		// Get the guy's all posts
+		// Get the guy's all posts from his homepage
 		String specificPost = getPage(url);
 		
 		String totalPage = findPattern("value=\"跳页\" />&nbsp;1/([0-9]*?)页", specificPost);
