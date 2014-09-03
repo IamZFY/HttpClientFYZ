@@ -26,7 +26,6 @@ import org.apache.http.message.BasicNameValuePair;
 
 public class Login extends Thread {
 
-	//http://weibo.cn/?gsid=4uHw63051JizpEpp5wIZhl6Oi1z
 	static ArrayList <ArrayList <String>> files = new ArrayList <ArrayList <String>> () ;
 	private SimpleDateFormat sdf = new SimpleDateFormat("HH");
 	private DefaultHttpClient client = new DefaultHttpClient();
@@ -98,10 +97,6 @@ public class Login extends Thread {
 
 	}
 	
-	//   4uUp63051MvNotPNF3sacl5Mq8P
-	//   4uVR630516RVoFBvW6Ak0l53Gd1
-	//   4umE63051sbMWIq1lyAdNgtyEa0
-	//   4uea63051ofBIBIF8IJR8dn0VXS
 	public void run() {
 		
 	
@@ -132,7 +127,6 @@ public class Login extends Thread {
 		for (int i = 0; i < 5000; i++) {
 			String s = getRandomGSID(27);
 			url = "http://weibo.cn/?gsid=" + s;
-			//url = "http://weibo.cn/?vt=4&gsid=4uHw63051JizpEpp5wIZhl6Oi1z";
 			String result = getPage(url);
 			sleep(10);
 			System.out.print(".");
