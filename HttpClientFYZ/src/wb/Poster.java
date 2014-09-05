@@ -91,7 +91,7 @@ public class Poster extends Thread {
 		}
 		int mode = Integer.parseInt(file.get(5) );
 		
-		//////////////////////////////////
+		//Login 
 		String userName = file.get(6);
 		String password = file.get(7);
 		
@@ -111,7 +111,6 @@ public class Poster extends Thread {
 		String passwordfieldname = StringUtil.findPattern(	"<input type=\"password\" name=\"(.*)\" size=\"30\" /><br/><input type=\"checkbox\"", result.toString());
 		HtmlUtil.setValues(nameValuePairs, passwordfieldname, password);
 		
-		System.out.println("-----------------------");
 		HtmlUtil.printMap(nameValuePairs);
 
 		post.setEntity(new UrlEncodedFormEntity(nameValuePairs));
@@ -125,7 +124,8 @@ public class Poster extends Thread {
 		get = new HttpGet(loginurl);
 		response = client.execute(get);
 		HttpUtil.readResponse(response, "UTF-8").toString();
-		//////////////////
+
+		// End login
 		
 		if (mode == 4) // deletion
 			{
